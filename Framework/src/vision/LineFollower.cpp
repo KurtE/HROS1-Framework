@@ -17,7 +17,6 @@
 #include "Walking.h"
 #include "LineFollower.h"
 #include "MotionStatus.h"
-#include "PS3Controller.h"
 #include "Kinematics.h"
 
 

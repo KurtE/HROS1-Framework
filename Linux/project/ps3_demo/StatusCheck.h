@@ -10,6 +10,7 @@
 
 #include "CM730.h"
 #include "minIni.h"
+#include "JoystickController.h"
 
 #define SCRIPT_FILE_PATH_TRIANGLE    "action_scripts/Triangle.asc"
 #define SCRIPT_FILE_PATH_CIRCLE   "action_scripts/Circle.asc"
@@ -65,7 +66,7 @@ namespace Robot
 				static minIni* m_ini;
 				static minIni* m_ini1;
 				       
-				static void Check(CM730 &cm730);
+				static void Check(LinuxJoy &ljoy, CM730 &cm730);
 
 	};
 }

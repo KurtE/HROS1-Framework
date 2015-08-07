@@ -17,7 +17,6 @@
 #include "Walking.h"
 #include "PS3BallFollower.h"
 #include "MotionStatus.h"
-#include "PS3Controller.h"
 
 
 using namespace Robot;

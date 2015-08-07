@@ -7,7 +7,7 @@
 #include <libgen.h>
 #include <signal.h>
 #include "cmd_process.h"
-#include "PS3Controller.h"
+#include "JoystickController.h"
 
 #ifdef MX28_1024
 #define MOTION_FILE_PATH    "../../../Data/motion_1024.bin"
@@ -45,6 +45,8 @@ int main(int argc, char *argv[])
     signal(SIGQUIT, &sighandler);
     signal(SIGINT, &sighandler);
 
+    LinuxJoy ljoy = LinuxJoy();     // create our joystick object
+
     int ch;
     char filename[128];
 
@@ -74,7 +76,8 @@ int main(int argc, char *argv[])
     }
     ////////////////////////////////////////////////////////////
 
-  //	PS3Controller_Start();
+    // Start up our joystick. - It will also handle the cases where the joystick starts up after program
+    ljoy.begin("/dev/input/js0");
   //////////////////// Framework Initialize ////////////////////////////	
     if(MotionManager::GetInstance()->Initialize(&cm730) == false)
     {
@@ -97,13 +100,13 @@ int main(int argc, char *argv[])
     int num_param;
     int iparam[30];
     char iparams[30][10];
-		char s[60];
+	char s[60];
     int idx = 0;
 		int apState[6]={0,0,0,0,0,0};
 
     while(1)
     {
-       // while(!kbhit(true)) ProcessPS3(&cm730,apState);
+       // while(!kbhit(true)) ProcessJoystick(ljoy, &cm730,apState);
 				ch = _getch();
 
         if(ch == 0x1b)
@@ -142,7 +145,7 @@ int main(int argc, char *argv[])
 
           while(1)
             {
-						//while(!kbhit(true))	ProcessPS3(&cm730,apState);
+						//while(!kbhit(true))	ProcessJoystick(&ljoy, &cm730,apState);
             ch = _getch();
             if( ch == 0x0A ) // newline
               break;

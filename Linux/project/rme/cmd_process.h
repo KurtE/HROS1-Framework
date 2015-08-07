@@ -3,6 +3,7 @@
 
 
 #include "LinuxDARwIn.h"
+#include "JoystickController.h"
 
 
 #define PROGRAM_VERSION		"v1.00"
@@ -115,6 +116,6 @@ void NameCmd();
 void MonitorServos(Robot::CM730 *cm730);
 void SetColor(int fg,int bg,int attrib);
 int kbhit(bool bPushed);
-void ProcessPS3(Robot::CM730 *cm730,int *apState);
+void ProcessJoystick(LinuxJoy &ljoy, Robot::CM730 *cm730,int *apState);
 
 #endif

@@ -45,7 +45,7 @@ OBJS =  ../../Framework/src/CM730.o     	\
         ../../Framework/src/vision/Image.o  		\
         ../../Framework/src/vision/ImgProcess.o 	\
         ../../Framework/src/minIni/minIni.o	\
-        ../../Framework/src/controller/PS3Controller.o	\
+	../../Framework/src/controller/JoystickController.o \
         ../../Framework/src/commander/SerialInputCommander.o	\
         LinuxActionScript.o   \
         LinuxCamera.o   \
