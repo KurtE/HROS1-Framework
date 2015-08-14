@@ -55,12 +55,13 @@ void StatusCheck::Check(LinuxJoy &ljoy, CM730 &cm730)
 //////////////////////////////////////////////////////////////////////////////////////		
     if (ljoy.buttonPressed(JOYSTICK_BUTTONS::PS)) 
     {
+        printf("PS button pressed\n");
         if(Walking::GetInstance()->IsRunning() == true)
         {
             Walking::GetInstance()->Stop();
             while(Walking::GetInstance()->IsRunning() == 1) usleep(8000);
         }
-        if(ToggleRobotStandby()==1)
+	    ToggleRobotStandby();
             usleep(8000);
     }
     
