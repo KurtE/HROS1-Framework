@@ -325,7 +325,7 @@ void *LinuxJoy::JoystickThreadProc(void *pv)
 //====================================================================
 // Begin
 //====================================================================
-bool LinuxJoy::begin(char *pszDevice)
+bool LinuxJoy::begin(const char *pszDevice)
 {
     int err;
     // Create our lock to make sure we can do stuff safely
