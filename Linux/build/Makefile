@@ -7,61 +7,106 @@
 #
 ###############################################################
 
-CC = g++ -fPIC
+#~~~~~~~~~~~~~~~~~~~~ Output File Name ~~~~~~~~~~~~~~~~~~~~
+TARGET = darwin.a
+
+#~~~~~~~~~~~~~~~~~~~~ Include Directories ~~~~~~~~~~~~~~~~~~~~
+CC = g++
 AR = ar
 ARFLAGS = cr
 
-TARGET = darwin.a
+#~~~~~~~~~~~~~~~~~~~~ Include Directories ~~~~~~~~~~~~~~~~~~~~
+INCLUDE_DIRS = -I. -I../include -I../../Framework/include 
 
-INCLUDE_DIRS = -I../include -I../../Framework/include 
-
+#~~~~~~~~~~~~~~~~~~~~ Compiler Options ~~~~~~~~~~~~~~~~~~~~
 CXXFLAGS += -fPIC -shared -O2 -DLINUX -D_GNU_SOURCE -Wall -g $(INCLUDE_DIRS) 
 #CXXFLAGS += -O2 -DDEBUG -DLINUX -D_GNU_SOURCE -Wall -shared $(INCLUDE_DIRS)
+
+#~~~~~~~~~~~~~~~~~~~~ Linker Options ~~~~~~~~~~~~~~~~~~~~
 LFLAGS += -g -lpthread -ldl -lbluetooth -lncurses
 
-OBJS =  ../../Framework/src/CM730.o     	\
-        ../../Framework/src/math/Matrix.o   \
-        ../../Framework/src/math/Plane.o    \
-        ../../Framework/src/math/Point.o    \
-        ../../Framework/src/math/Vector.o   \
-		../../Framework/src/math/QuadraticStateTransform.o   \
-		../../Framework/src/math/MotionState.o   \
-        ../../Framework/src/motion/JointData.o  	\
-        ../../Framework/src/motion/Kinematics.o 	\
-        ../../Framework/src/motion/MotionManager.o  \
-        ../../Framework/src/motion/MotionStatus.o   \
-		../../Framework/src/motion/AngleEstimator.o \
-        ../../Framework/src/motion/modules/Action.o \
-        ../../Framework/src/motion/modules/Head.o   \
-        ../../Framework/src/motion/modules/Walking.o\
-        ../../Framework/src/vision/BallFollower.o   \
-        ../../Framework/src/vision/PS3BallFollower.o   \
-        ../../Framework/src/vision/LineFollower.o   \
-        ../../Framework/src/vision/RobotFollower.o   \
-        ../../Framework/src/vision/ConnectRegions.o   \
-        ../../Framework/src/vision/RadonTransform.o   \
-        ../../Framework/src/vision/BallTracker.o    \
-        ../../Framework/src/vision/ColorFinder.o    \
-        ../../Framework/src/vision/Image.o  		\
-        ../../Framework/src/vision/ImgProcess.o 	\
-        ../../Framework/src/minIni/minIni.o	\
-	../../Framework/src/controller/JoystickController.o \
-        ../../Framework/src/commander/SerialInputCommander.o	\
-        LinuxActionScript.o   \
-        LinuxCamera.o   \
-        LinuxCM730.o    \
-        LinuxMotionTimer.o    \
-        LinuxNetwork.o
+#~~~~~~~~~~~~~~~~~~~~ Source Files ~~~~~~~~~~~~~~~~~~~~
+SOURCES = \
+		../../Framework/src/CM730.cpp     	\
+		../../Framework/src/math/Matrix.cpp   \
+		../../Framework/src/math/Plane.cpp    \
+		../../Framework/src/math/Point.cpp    \
+		../../Framework/src/math/Vector.cpp   \
+		../../Framework/src/math/QuadraticStateTransform.cpp   \
+		../../Framework/src/math/MotionState.cpp   \
+		../../Framework/src/motion/JointData.cpp  	\
+		../../Framework/src/motion/Kinematics.cpp 	\
+		../../Framework/src/motion/MotionManager.cpp  \
+		../../Framework/src/motion/MotionStatus.cpp   \
+		../../Framework/src/motion/AngleEstimator.cpp \
+		../../Framework/src/motion/modules/Action.cpp \
+		../../Framework/src/motion/modules/Head.cpp   \
+		../../Framework/src/motion/modules/Walking.cpp\
+		../../Framework/src/vision/BallFollower.cpp   \
+		../../Framework/src/vision/PS3BallFollower.cpp   \
+		../../Framework/src/vision/LineFollower.cpp   \
+		../../Framework/src/vision/RobotFollower.cpp   \
+		../../Framework/src/vision/ConnectRegions.cpp   \
+		../../Framework/src/vision/RadonTransform.cpp   \
+		../../Framework/src/vision/BallTracker.cpp    \
+		../../Framework/src/vision/ColorFinder.cpp    \
+		../../Framework/src/vision/Image.cpp  		\
+		../../Framework/src/vision/ImgProcess.cpp 	\
+		../../Framework/src/controller/JoystickController.cpp \
+		../../Framework/src/commander/SerialInputCommander.cpp	\
+		../../Framework/src/minIni/minIni.cpp \
+		LinuxActionScript.cpp   \
+		LinuxCamera.cpp   \
+		LinuxCM730.cpp    \
+		LinuxMotionTimer.cpp    \
+		LinuxNetwork.cpp
+
+	   
+#~~~~~~~~~~~~~~~~~~~~ Object Files ~~~~~~~~~~~~~~~~~~~~
+OBJS:= $(subst .cpp,.o,$(SOURCES)) 
+
+
+DEPS:= $(subst .cpp,.d,$(SOURCES))
+
+#~~~~~~~~~~~~~~~~~~~~ all ~~~~~~~~~~~~~~~~~~~~
+all: begin gccversion build end
+
+#~~~~~~~~~~~~~~~~~~~~ build ~~~~~~~~~~~~~~~~~~~~
+build: $(TARGET)
 
 $(TARGET): $(OBJS)
 	mkdir -p ../lib/
 	$(AR) $(ARFLAGS) ../lib/$(TARGET) $(OBJS) 
 #	$(CC) -o $(TARGET) $(OBJS) $(LFLAGS)
 
-all: $(TARGET)
+MSG_BEGIN = -------- begin --------
+MSG_END = --------  end  --------
+
+#~~~~~~~~~~~~~~~~~~~~ Eye candy ~~~~~~~~~~~~~~~~~~~~
+begin:
+	@echo
+	@echo $(MSG_BEGIN)
+	@echo ${OSTYPE}
+
+end:
+	@echo $(MSG_END)
+	@echo
+
+gccversion:
+	@$(CC) --version
+
 
 clean:
-	rm -f $(OBJS) ../lib/$(TARGET)
+	-rm -f $(../lib/$(TARGET))
+	-rm -f $(DEPS)
+	-rm -f $(OBJS)
 
+#~~~~~~~~~~~~~~~~~~~~ Dependency Generation
+include $(subst .cpp,.d,$(SOURCES)) 
+
+%.d: %.cpp
+	$(CC) -M $(CXXFLAGS) $< > $@.$$$$; \
+	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@;  \
+	rm -f $@.$$$$
 
 
