@@ -87,7 +87,7 @@ unsigned long millis(void)
 LinuxJoy::LinuxJoy()
 {
     data_changed_ = false;
-    print_level_ = 1;   // Will change to 0 later...
+    print_level_ = 1;    // Will change to 0 later...
     
     // Set initial states
     thread_buttons_ = 0;
@@ -119,6 +119,7 @@ void *LinuxJoy::JoystickThreadProc(void *pv)
     int joy_fd = -1;                              // File descriptor 
     bool error_reported = false;    
     int count_messages_to_ignore = 0;             // How many messages should we ignore
+    int num_of_axis = 0, num_of_buttons=0;
 
     const uint8_t*  ptol_button_mapping = NULL;    // is there any button mappings?
     AXIS_BUTTON_MAP const * axis_button_map = NULL;
@@ -139,10 +140,13 @@ void *LinuxJoy::JoystickThreadProc(void *pv)
         {
             if ((joy_fd = open(pljoy->input_device_name_,O_RDONLY)) != -1 )
             {
-                ioctl(joy_fd, JSIOCGAXES , &(pljoy->num_of_axis_));
-                ioctl(joy_fd, JSIOCGBUTTONS , &(pljoy->num_of_buttons_));
+                ioctl(joy_fd, JSIOCGAXES , &num_of_axis);
+                ioctl(joy_fd, JSIOCGBUTTONS , &num_of_buttons);
                 ioctl(joy_fd, JSIOCGNAME(80), &(pljoy->name_of_joystick_));
 
+                pljoy->num_of_axis_ = num_of_axis;
+                pljoy->num_of_buttons_ = num_of_buttons;
+                //printf("Buttons %d Axes %d\n", num_of_buttons, num_of_axis);
                 // Keep our realtime cache of Axis and buttons
                 pljoy->thread_axis_ = (int *) calloc( pljoy->num_of_axis_ , sizeof(int));
                
