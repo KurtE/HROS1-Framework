@@ -81,17 +81,20 @@ Walking::Walking()
     m_Joint.SetSlope(JointData::ID_L_ELBOW, JointData::SLOPE_EXTRASOFT, JointData::SLOPE_EXTRASOFT);
 	m_Joint.SetSlope(JointData::ID_HEAD_PAN, JointData::SLOPE_EXTRASOFT, JointData::SLOPE_EXTRASOFT);
 
+	
 #if LOG_BALANCE
     m_balanceLog = fopen("balance.log", "w");
     assert(m_balanceLog);
 #endif
 
+	/* No PID on AX
     m_Joint.SetPGain(JointData::ID_R_SHOULDER_PITCH, 8);
     m_Joint.SetPGain(JointData::ID_L_SHOULDER_PITCH, 8);
     m_Joint.SetPGain(JointData::ID_R_SHOULDER_ROLL, 8);
     m_Joint.SetPGain(JointData::ID_L_SHOULDER_ROLL, 8);
     m_Joint.SetPGain(JointData::ID_R_ELBOW, 8);
     m_Joint.SetPGain(JointData::ID_L_ELBOW, 8);
+    */
 }
 
 Walking::~Walking()
@@ -604,10 +607,18 @@ void Walking::Process()
             offset += (double)dir[i] * pelvis_offset_r;
         else if(i == 7) // L_HIP_ROLL
             offset += (double)dir[i] * pelvis_offset_l;
+        
         else if(i == 2 || i == 8) // R_HIP_PITCH or L_HIP_PITCH
-            offset -= (double)dir[i] * HIP_PITCH_OFFSET * MX28::RATIO_ANGLE2VALUE;
-
-        outValue[i] = MX28::Angle2Value(initAngle[i]) + (int)offset;
+            offset -= (double)dir[i] * ( 15.0 + HIP_PITCH_OFFSET ) * MX28::RATIO_ANGLE2VALUE;
+		
+		else if ( i == 3 /*JointData::ID_R_KNEE*/ || i == 9 /*JointData::ID_L_KNEE*/ )
+			offset += (double)dir[i] * 20.0 * MX28::RATIO_ANGLE2VALUE;
+			
+		else if( i == 4 || i == 10) // R_ANKLE_PITCH or L_ANKLE_PITCH
+			offset += (double)dir[i] * 5.0 * MX28::RATIO_ANGLE2VALUE;
+		
+				
+		outValue[i] = MX28::Angle2Value(initAngle[i]) + (int)offset;
     }
 
     // adjust balance offset
@@ -648,7 +659,19 @@ void Walking::Process()
 
 	for(int id = JointData::ID_R_HIP_YAW; id <= JointData::ID_L_ANKLE_ROLL; id++)
 	{
-	m_Joint.SetSlope(id, JointData::SLOPE_HARD, JointData::SLOPE_HARD);
+		// Testing alternate slopes.. not a great idea...
+		if ( id == JointData::ID_R_HIP_ROLL || id == JointData::ID_L_HIP_ROLL )
+		{
+			m_Joint.SetSlope(id, JointData::SLOPE_DEFAULT, JointData::SLOPE_DEFAULT);
+		}
+		else if ( id == JointData::ID_R_HIP_PITCH || id == JointData::ID_L_HIP_PITCH )
+		{
+			m_Joint.SetSlope(id, JointData::SLOPE_DEFAULT, JointData::SLOPE_DEFAULT);
+		}
+		else
+		{
+			m_Joint.SetSlope(id, JointData::SLOPE_HARD, JointData::SLOPE_HARD);
+		}
 	}
 
 

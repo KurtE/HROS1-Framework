@@ -40,7 +40,6 @@ bool ToggleRobotStandby(void)
     robotInStandby = robotInStandby ? false : true;
     return robotInStandby;
 }
-
 void StatusCheck::Check(LinuxJoy &ljoy, CM730 &cm730)
 {
     // Call off to joystick to get the current status. 
@@ -61,7 +60,7 @@ void StatusCheck::Check(LinuxJoy &ljoy, CM730 &cm730)
             Walking::GetInstance()->Stop();
             while(Walking::GetInstance()->IsRunning() == 1) usleep(8000);
         }
-	    ToggleRobotStandby();
+        ToggleRobotStandby();
             usleep(8000);
     }
     
@@ -71,30 +70,45 @@ void StatusCheck::Check(LinuxJoy &ljoy, CM730 &cm730)
         return;
     }
 
+//TODO: Testing auto stop when fallen
+if(MotionStatus::FALLEN != STANDUP && m_is_started == 1)
+{
+    int i = JointData::ID_R_SHOULDER_PITCH;
+    Walking::GetInstance()->Stop();
+    for ( ; i < JointData::ID_L_ELBOW; ++i )
+    {
+        Walking::GetInstance()->m_Joint.SetEnable( i, false );
+    }
+    printf( "I think I've fallen over!\r\n");
+    while(Walking::GetInstance()->IsRunning() == 1) usleep(8000);
+    LinuxActionScript::m_stop = 1;
+}
 
 //////////////////////////////////////////////////////////////////////////////////////
 // IMU AUTO GETUP ROUTINE
 //////////////////////////////////////////////////////////////////////////////////////		
-/*
-     if(MotionStatus::FALLEN != STANDUP && (m_cur_mode == SOCCER) && m_is_started == 1)
+
+    if(MotionStatus::FALLEN != STANDUP && /*(m_cur_mode == SOCCER) &&*/ m_is_started == 1)
    	{
-     Walking::GetInstance()->Stop();
-     	resetLEDs(cm730);
-     	while(Walking::GetInstance()->IsRunning() == 1) usleep(8000);
+        Walking::GetInstance()->Stop();
+        resetLEDs(cm730);
+        while(Walking::GetInstance()->IsRunning() == 1) usleep(8000);
 
-     Action::GetInstance()->m_Joint.SetEnableBody(true, true);
-     while(Action::GetInstance()->IsRunning() == 1) usleep(8000);
+        Action::GetInstance()->m_Joint.SetEnableBody(true, true);
+        while(Action::GetInstance()->IsRunning() == 1) usleep(8000);
 
 
-    if(MotionStatus::FALLEN == FORWARD)
-        Action::GetInstance()->Start(1);   // FORWARD GETUP 10
-    else if(MotionStatus::FALLEN == BACKWARD)
-        Action::GetInstance()->Start(1);   // BACKWARD GETUP 11
+        if(MotionStatus::FALLEN == FORWARD)
+            Action::GetInstance()->Start(10);   // FORWARD GETUP 10
+        else if(MotionStatus::FALLEN == BACKWARD)
+            Action::GetInstance()->Start(11);   // BACKWARD GETUP 11
 
-    Head::GetInstance()->m_Joint.SetEnableHeadOnly(true, true);
-    Walking::GetInstance()->m_Joint.SetEnableBodyWithoutHead(true, true);
-        }
-*/
+        while(Action::GetInstance()->IsRunning() == 1) usleep(8000);
+
+        Head::GetInstance()->m_Joint.SetEnableHeadOnly(true, true);
+        Walking::GetInstance()->m_Joint.SetEnableBodyWithoutHead(true, true);
+    }
+
 
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -152,7 +166,7 @@ void StatusCheck::Check(LinuxJoy &ljoy, CM730 &cm730)
         Head::GetInstance()->m_Joint.SetEnableHeadOnly(true);
     }
 
-
+/*
 //////////////////////////////////////////////////////////////////////////////////////
 // Action Script Button Assignment
 //////////////////////////////////////////////////////////////////////////////////////	
@@ -304,7 +318,7 @@ void StatusCheck::Check(LinuxJoy &ljoy, CM730 &cm730)
     }		
 
 
-
+*/
 
 //////////////////////////////////////////////////////////////////////////////////////
 // PS3 R/C Control code
@@ -313,14 +327,20 @@ void StatusCheck::Check(LinuxJoy &ljoy, CM730 &cm730)
 
     if(Walking::GetInstance()->IsRunning() == true)
     {
-        int rx,ry,dead_band=6;			
+        int rx,ry;
+        int dead_band=25;			
         double FBStep=0,RLTurn=0,RLStep=0,xd,yd;
         static double speedAdjSum=0;			
 
+#ifdef Southpaw
+        rx = ljoy.axis(JOYSTICK_AXES::RX) / 256;
+        ry = ljoy.axis(JOYSTICK_AXES::RY) / 256;
+#else
         rx = ljoy.axis(JOYSTICK_AXES::LX) / 256;
         ry = ljoy.axis(JOYSTICK_AXES::LY) / 256;
+#endif
             
-//		fprintf(stderr, " (X:%d Y:%d)\n", rx, ry);
+//		  fprintf(stderr, " (X:%d Y:%d)\n", rx, ry);
             
         if(abs(rx) > dead_band || abs(ry) > dead_band)
         {
@@ -328,13 +348,13 @@ void StatusCheck::Check(LinuxJoy &ljoy, CM730 &cm730)
             yd = (double)(ry-dead_band)/256;
             RLTurn = 50*xd;	
             FBStep = 45*yd;
-//				fprintf(stderr, " (yd:%.1f)\n", yd);
-            Walking::GetInstance()->HIP_PITCH_OFFSET = Walking::GetInstance()->HIP_PITCH_OFFSET_START + yd/2;
+//            fprintf(stderr, " (yd:%.1f)\n", yd);
+            //Walking::GetInstance()->HIP_PITCH_OFFSET = Walking::GetInstance()->HIP_PITCH_OFFSET_START + yd/2;
             if(FBStep < 0)
             {
                 FBStep = 20*yd;
             }
-            speedAdjSum += yd;
+ 			speedAdjSum += yd;
 
             if(speedAdjSum > Walking::GetInstance()->UPPER_VELADJ_LIMIT)
             { 
@@ -352,13 +372,13 @@ void StatusCheck::Check(LinuxJoy &ljoy, CM730 &cm730)
         }
         Walking::GetInstance()->speedAdj = speedAdjSum;
         Walking::GetInstance()->X_OFFSET = Walking::GetInstance()->X_OFFSET_START - speedAdjSum;
-        
-//        double hip_offset = Walking::GetInstance()->HIP_PITCH_OFFSET;
-//			fprintf(stderr, " (hip offset:%.1f)\n", hip_offset);
+            
+        //double hip_offset = Walking::GetInstance()->HIP_PITCH_OFFSET;
+//        fprintf(stderr, " (hip offset:%.1f)\n", hip_offset);
         Walking::GetInstance()->X_MOVE_AMPLITUDE = FBStep;
         Walking::GetInstance()->Y_MOVE_AMPLITUDE = RLStep;
         Walking::GetInstance()->A_MOVE_AMPLITUDE = RLTurn;	
-//			fprintf(stderr, " (FB:%.1f RL:%.1f)\n", FBStep, RLTurn);		
+//      fprintf(stderr, " (FB:%.1f RL:%.1f)\n", FBStep, RLTurn);		
     }
     else //things only done in auto mode
     {

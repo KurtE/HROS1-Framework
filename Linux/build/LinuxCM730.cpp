@@ -61,15 +61,16 @@ bool LinuxCM730::OpenPort()
 	if(DEBUG_PRINT == true)
 		printf("success!\n");
 
-	// You must set 38400bps!
 	memset(&newtio, 0, sizeof(newtio));
-    newtio.c_cflag      = B38400|CS8|CLOCAL|CREAD;
-    newtio.c_iflag      = IGNPAR;
-    newtio.c_oflag      = 0;
-    newtio.c_lflag      = 0;
-    newtio.c_cc[VTIME]  = 0;
-    newtio.c_cc[VMIN]   = 0;
-    tcsetattr(m_Socket_fd, TCSANOW, &newtio);
+	newtio.c_cflag		= B1000000|CS8|CLOCAL|CREAD;
+	newtio.c_iflag		= IGNPAR;
+	newtio.c_oflag		= 0;
+	newtio.c_lflag		= 0;
+	newtio.c_cc[VTIME]	= 0;	// time-out ? (TIME * 0.1?) 0 : disable
+	newtio.c_cc[VMIN]	= 0;	// MIN ? read ? return ?? ?? ?? ?? ??
+
+	tcflush(m_Socket_fd, TCIFLUSH);
+	tcsetattr(m_Socket_fd, TCSANOW, &newtio);
 
 	if(DEBUG_PRINT == true)
 		printf("Set %.1fbps ", baudrate);
@@ -78,6 +79,8 @@ bool LinuxCM730::OpenPort()
     if(ioctl(m_Socket_fd, TIOCGSERIAL, &serinfo) < 0)
 		goto UART_OPEN_ERROR;
 
+    // TRY like USB2AX and not use this stuff...
+/*
     serinfo.flags &= ~ASYNC_SPD_MASK;
     serinfo.flags |= ASYNC_SPD_CUST;
     serinfo.custom_divisor = serinfo.baud_base / baudrate;
@@ -88,7 +91,7 @@ bool LinuxCM730::OpenPort()
 			printf("failed!\n");
 		goto UART_OPEN_ERROR;
 	}
-
+*/
 	if(DEBUG_PRINT == true)
 		printf("success!\n");
 

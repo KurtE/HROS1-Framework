@@ -89,3 +89,47 @@ void BallTracker::Process(Image* camImg)
 		if(bMotionEnable == true)  Head::GetInstance()->MoveTracking(ball_position);
 	}
 }
+
+double fitRange(double input, double range)
+{
+	if(input>range)return range;
+	if(input<-range)return -range;
+	return input;
+}
+
+void BallTracker::Process(Point2D pos)
+{
+	if(pos.X < 0 || pos.Y < 0)
+	{
+		ball_position.X = -1;
+		ball_position.Y = -1;
+		if(NoBallCount < NoBallMaxCount)
+		{
+			Head::GetInstance()->MoveTracking();
+			NoBallCount++;
+		}
+		else
+		{
+			Head::GetInstance()->InitTracking();
+			Head::GetInstance()->MoveToHome();
+		}
+	}
+	else
+	{
+		NoBallCount = 0;
+		Point2D center = Point2D((double)Camera::WIDTH/2.0, (double)Camera::HEIGHT/2.0);
+		Point2D offset = pos - center;
+		offset *= -1.0; // Inverse X-axis, Y-axis
+
+		offset.X *= (Camera::VIEW_H_ANGLE / (double)Camera::WIDTH); // pixel per angle
+		offset.Y *= (Camera::VIEW_V_ANGLE / (double)Camera::HEIGHT); // pixel per angle
+		
+		//offset.X=fitRange(offset.X,12);
+		//offset.Y=fitRange(offset.Y,12);
+
+		//printf( "Ball X: %0.2f Ball Y: %0.2f\r\n", offset.X, offset.Y);
+
+		ball_position = offset;
+		Head::GetInstance()->MoveTracking(ball_position);
+	}
+}

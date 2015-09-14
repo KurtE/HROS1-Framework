@@ -55,6 +55,9 @@ SOURCES = \
 		../../Framework/src/controller/JoystickController.cpp \
 		../../Framework/src/commander/SerialInputCommander.cpp	\
 		../../Framework/src/minIni/minIni.cpp \
+		streamer/httpd.cpp           \
+		streamer/jpeg_utils.cpp      \
+		streamer/mjpg_streamer.cpp   \
 		LinuxActionScript.cpp   \
 		LinuxCamera.cpp   \
 		LinuxCM730.cpp    \
