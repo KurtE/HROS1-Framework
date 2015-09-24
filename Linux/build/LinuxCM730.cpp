@@ -62,7 +62,7 @@ bool LinuxCM730::OpenPort()
 		printf("success!\n");
 
 	memset(&newtio, 0, sizeof(newtio));
-	newtio.c_cflag		= B1000000|CS8|CLOCAL|CREAD;
+	newtio.c_cflag		= B38400|CS8|CLOCAL|CREAD;
 	newtio.c_iflag		= IGNPAR;
 	newtio.c_oflag		= 0;
 	newtio.c_lflag		= 0;
@@ -79,10 +79,8 @@ bool LinuxCM730::OpenPort()
     if(ioctl(m_Socket_fd, TIOCGSERIAL, &serinfo) < 0)
 		goto UART_OPEN_ERROR;
 
-    // TRY like USB2AX and not use this stuff...
-/*
     serinfo.flags &= ~ASYNC_SPD_MASK;
-    serinfo.flags |= ASYNC_SPD_CUST;
+    serinfo.flags |= ASYNC_SPD_CUST | ASYNC_LOW_LATENCY;
     serinfo.custom_divisor = serinfo.baud_base / baudrate;
 	
     if(ioctl(m_Socket_fd, TIOCSSERIAL, &serinfo) < 0)
@@ -91,7 +89,6 @@ bool LinuxCM730::OpenPort()
 			printf("failed!\n");
 		goto UART_OPEN_ERROR;
 	}
-*/
 	if(DEBUG_PRINT == true)
 		printf("success!\n");
 
