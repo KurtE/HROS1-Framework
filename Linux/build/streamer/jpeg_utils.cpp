@@ -116,7 +116,7 @@ int jpeg_utils::compress_yuyv_to_jpeg(Image *src, unsigned char* buffer, int siz
     jpeg_start_compress (&cinfo, TRUE);
 
     z = 0;
-    while (cinfo.next_scanline < src->m_Height) {
+    while ((int)cinfo.next_scanline < src->m_Height) {
         int x;
         unsigned char *ptr = line_buffer;
 
@@ -163,7 +163,6 @@ int jpeg_utils::compress_rgb_to_jpeg(Image *src, unsigned char* buffer, int size
     struct jpeg_error_mgr jerr;
     JSAMPROW row_pointer[1];
     unsigned char *line_buffer, *rgb;
-    int z;
     static int written;
 
     line_buffer = (unsigned char*)calloc (src->m_Width * 3, 1);
@@ -184,8 +183,7 @@ int jpeg_utils::compress_rgb_to_jpeg(Image *src, unsigned char* buffer, int size
 
     jpeg_start_compress (&cinfo, TRUE);
 
-    z = 0;
-    while (cinfo.next_scanline < src->m_Height) {
+    while ((int)cinfo.next_scanline < src->m_Height) {
         int x;
         unsigned char *ptr = line_buffer;
 

@@ -108,11 +108,11 @@ int httpd::_read(int fd, iobuffer *iobuf, void *buffer, size_t len, int timeout)
 
   while ( (copied < (int)len) ) {
     i = MIN(iobuf->level, (int)len-copied);
-    memcpy(buffer+copied, iobuf->buffer+IO_BUFFER-iobuf->level, i);
+    memcpy((char*)buffer+copied, iobuf->buffer+IO_BUFFER-iobuf->level, i);
 
     iobuf->level -= i;
     copied += i;
-    if ( copied >= len )
+    if ( copied >= (int)len )
       return copied;
 
     /* select will return in case of timeout or new data arrived */
@@ -171,7 +171,7 @@ int httpd::_readline(int fd, iobuffer *iobuf, void *buffer, size_t len, int time
 
   memset(buffer, 0, len);
 
-  for ( i=0; i<len && c != '\n'; i++ ) {
+  for ( i=0; i<(int)len && c != '\n'; i++ ) {
     if ( _read(fd, iobuf, &c, 1, timeout) <= 0 ) {
       /* timeout or error occured */
       return -1;
@@ -266,7 +266,9 @@ void httpd::send_snapshot(int fd) {
     free(frame);
     return;
   }
-  write(fd, frame, frame_size);
+  
+  int res __attribute__((unused));
+  res = write(fd, frame, frame_size);
 
   free(frame);
 }
@@ -353,7 +355,7 @@ Input Value.: * fd.....: is the filedescriptor to send the message to
               * message: append this string to the displayed response
 Return Value: -
 ******************************************************************************/
-void httpd::send_error(int fd, int which, char *message) {
+void httpd::send_error(int fd, int which, const char *message) {
   char buffer[BUFFER_SIZE] = {0};
 
   if ( which == 401 ) {
@@ -394,7 +396,8 @@ void httpd::send_error(int fd, int which, char *message) {
                     "%s", message);
   }
 
-  write(fd, buffer, strlen(buffer));
+  int res __attribute__((unused));
+  res = write(fd, buffer, strlen(buffer));
 }
 
 /******************************************************************************
@@ -407,9 +410,9 @@ Input Value.: * fd.......: filedescriptor to send data to
               * id.......: specifies which server-context is the right one
 Return Value: -
 ******************************************************************************/
-void httpd::send_file(int fd, char *parameter) {
+void httpd::send_file(int fd, const char *parameter) {
   char buffer[BUFFER_SIZE] = {0};
-  char *extension, *mimetype=NULL;
+  const char *extension, *mimetype=NULL;
   int i, lfd;
   config conf = server->conf;    
      
@@ -424,7 +427,7 @@ void httpd::send_file(int fd, char *parameter) {
   }
 
   /* determine mime-type */
-  for ( i=0; i < LENGTH_OF(mimetypes); i++ ) {
+  for ( i=0; i < (int)LENGTH_OF(mimetypes); i++ ) {
     if ( strcmp(mimetypes[i].dot_extension, extension) == 0 ) {
       mimetype = (char *)mimetypes[i].mimetype;
       break;
@@ -480,7 +483,7 @@ Return Value: -
 ******************************************************************************/
 void httpd::command(int fd, char *parameter) {
   char buffer[BUFFER_SIZE] = {0}, *command=NULL, *svalue=NULL, *section=NULL;
-  int i=0, res=0, /*ivalue=0,*/ len=0;
+  int i=0, /*res=0, ivalue=0,*/ len=0;
   double dvalue=0;
 	 char ret_s[10] = {0};
 
@@ -558,7 +561,7 @@ void httpd::command(int fd, char *parameter) {
    * if the input-plugin does not implement the optional command
    * function, a short error is reported to the HTTP-client.
    */
-  for ( i=0; i < LENGTH_OF(in_cmd_mapping); i++ ) {
+  for ( i=0; i < (int)LENGTH_OF(in_cmd_mapping); i++ ) {
     if ( strcmp(in_cmd_mapping[i].string, command) == 0 ) {
 /*
       if ( pglobal->in.cmd == NULL ) {
@@ -574,7 +577,7 @@ void httpd::command(int fd, char *parameter) {
   }
 
   /* check if the command is for the output plugin itself */
-  for ( i=0; i < LENGTH_OF(out_cmd_mapping); i++ ) {
+  for ( i=0; i < (int)LENGTH_OF(out_cmd_mapping); i++ ) {
     if ( strcmp(out_cmd_mapping[i].string, command) == 0 ) {
       //res = output_cmd(id, out_cmd_mapping[i].cmd, ivalue);
       break;
@@ -588,7 +591,8 @@ void httpd::command(int fd, char *parameter) {
                   "\r\n" \
                   "%s: %s", command, ret_s);
 
-  write(fd, buffer, strlen(buffer));
+  int res __attribute__((unused));
+  res = write(fd, buffer, strlen(buffer));
 
   if (command != NULL) free(command);
 }

@@ -269,7 +269,7 @@ typedef struct {
 typedef struct {
   int port;
   char *credentials;
-  char *www_folder;
+  const char *www_folder;
   char nocommands;
 } config;
 
@@ -309,7 +309,7 @@ private:
     static void decodeBase64(char *data);
     static void send_snapshot(int fd);
     static void send_stream(int fd);
-    static void send_file(int fd, char *parameter);
+    static void send_file(int fd, const char *parameter);
     static void command(int fd, char *parameter);
     static void input_cmd(in_cmd_type cmd, float value, char* res_str);
     static void server_cleanup(void *arg);
@@ -327,7 +327,7 @@ public:
 	static bool ClientRequest;
 
     static void *server_thread( void *arg );
-    static void send_error(int fd, int which, char *message);
+    static void send_error(int fd, int which, const char *message);
 };
 
 
