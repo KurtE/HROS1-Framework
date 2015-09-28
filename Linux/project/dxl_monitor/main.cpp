@@ -45,11 +45,14 @@ int main()
 		while(1)
 		{
 			Prompt(gID);
-			gets(input);
+			if (fgets(input, sizeof(input), stdin) == 0)
+				continue;
 			fflush(stdin);
 			input_len = strlen(input);
 			if(input_len == 0)
 				continue;
+			if (input[input_len-1] == '\n')
+				input[input_len-1] = '\0';	
 
 			token = strtok( input, " " );
 			if(token == 0)
