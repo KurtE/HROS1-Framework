@@ -18,7 +18,10 @@ void change_current_dir()
 {
     char exepath[1024] = {0};
     if(readlink("/proc/self/exe", exepath, sizeof(exepath)) != -1)
-        chdir(dirname(exepath));
+    {
+        int res __attribute__((unused));
+        res = chdir(dirname(exepath));
+    }
 }
 
 void sighandler(int sig)
@@ -49,6 +52,8 @@ int main(int argc, char *argv[])
 			ini = new minIni(INI_FILE_PATH);
 
 	mjpg_streamer* streamer = new mjpg_streamer(0, 0);
+	if (streamer == 0)
+		printf("Warning: failed to create streamer\n");
     httpd::ini = ini;
     
     //////////////////// Framework Initialize ////////////////////////////

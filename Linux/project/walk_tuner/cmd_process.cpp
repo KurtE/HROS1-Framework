@@ -163,8 +163,8 @@ void DrawIntro(CM730 *cm730)
     setupterm(NULL, fileno(stdout), (int *)0);
     nrows = tigetnum("lines");
     ncolumns = tigetnum("cols");
-
-	system("clear");
+	int res __attribute__((unused));
+	res = system("clear");
 	printf("\n");
 	printf("[Walking Tuner for DARwIn %s]\n", PROGRAM_VERSION);
 	printf("\n");
@@ -182,7 +182,8 @@ void DrawIntro(CM730 *cm730)
 
 void DrawEnding()
 {
-	system("clear");
+	int res __attribute__((unused));
+	res = system("clear");
 	printf("\n");
 	printf("Terminate Walking Tuner");
 	printf("\n");
@@ -193,7 +194,8 @@ void DrawScreen()
 	int old_col = Col;
 	int old_row = Row;
 
-	system("clear");
+	int res __attribute__((unused));
+	res = system("clear");
 	GoToCursor(0, 0);
 
 	// Display menu
@@ -873,7 +875,8 @@ void EndCommandMode()
 
 void HelpCmd()
 {
-	system("clear");
+	int res __attribute__((unused));
+	res = system("clear");
 	printf("\n");
 	printf(" exit: Exits the program\n");
 	printf(" re: Refreshes the screen\n");
@@ -915,7 +918,8 @@ void MonitorCmd()
 		row = Row;
 	}
 
-	system("clear");
+	int res __attribute__((unused));
+	res = system("clear");
 	printf("\n");	
 	printf("Gyro F/B                  \n"); // 0
 	printf("Gyro R/L                  \n"); // 1
