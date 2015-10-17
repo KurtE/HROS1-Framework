@@ -13,7 +13,7 @@
 #include <linux/serial.h>
 #include <sys/ioctl.h>
 #include "LinuxCM730.h"
-
+#include <errno.h>
 using namespace Robot;
 
 
@@ -50,6 +50,8 @@ bool LinuxCM730::OpenPort()
     struct serial_struct serinfo;
 	double baudrate = 1000000.0; //bps (1Mbps)
     
+    int retval;
+    
     ClosePort();
 
 	if(DEBUG_PRINT == true)
@@ -61,34 +63,53 @@ bool LinuxCM730::OpenPort()
 	if(DEBUG_PRINT == true)
 		printf("success!\n");
 
+
 	memset(&newtio, 0, sizeof(newtio));
-	newtio.c_cflag		= B38400|CS8|CLOCAL|CREAD;
-	newtio.c_iflag		= IGNPAR;
-	newtio.c_oflag		= 0;
-	newtio.c_lflag		= 0;
-	newtio.c_cc[VTIME]	= 0;	// time-out ? (TIME * 0.1?) 0 : disable
-	newtio.c_cc[VMIN]	= 0;	// MIN ? read ? return ?? ?? ?? ?? ??
+    newtio.c_cflag      = B1000000|CS8|CLOCAL|CREAD;
+    newtio.c_iflag      = IGNPAR;
+    newtio.c_oflag      = 0;
+    newtio.c_lflag      = 0;
+    newtio.c_cc[VTIME]  = 0;
+    newtio.c_cc[VMIN]   = 0;
 
-	tcflush(m_Socket_fd, TCIFLUSH);
-	tcsetattr(m_Socket_fd, TCSANOW, &newtio);
+    if (tcsetattr(m_Socket_fd, TCSANOW, &newtio) < 0)
+    {
+        // Failed tcetattr at 1000000
+        printf("TCSETATTR (B1000000) error=%d\n", errno);
+        
+        // Try back at 38400 and setting attribute...
+        newtio.c_cflag      = B38400|CS8|CLOCAL|CREAD;
+        if (tcsetattr(m_Socket_fd, TCSANOW, &newtio) < 0)
+        {
+            printf("TCSETATTR (B38400) error=%d\n", errno);
+            goto UART_OPEN_ERROR;
+        }
+        
+        // if GetVAL succeed then we set the baud rate
+        // some devices we have to set the baud rate through IOCTLS (FTDI) and others
+        // we do not ... 
+        // You must set 38400bps!
+        retval = ioctl(m_Socket_fd, TIOCGSERIAL, &serinfo);
+        printf("TIOGSERIAL %d %d\n", retval, errno);
+       
+        if (retval >= 0)
+        {
+            if(DEBUG_PRINT == true)
+                printf("Set %.1fbps ", baudrate);
 
-	if(DEBUG_PRINT == true)
-		printf("Set %.1fbps ", baudrate);
+            serinfo.flags &= ~ASYNC_SPD_MASK;
+            serinfo.flags |= ASYNC_SPD_CUST;
+            serinfo.custom_divisor = serinfo.baud_base / baudrate;
+            
+            if((retval=ioctl(m_Socket_fd, TIOCSSERIAL, &serinfo)) < 0)
+            {
+                if(DEBUG_PRINT == true)
+                    printf("failed %d %d!\n", retval, errno);
+                //goto UART_OPEN_ERROR;
+            }
+        }
+    }
 
-	// Set non-standard baudrate
-    if(ioctl(m_Socket_fd, TIOCGSERIAL, &serinfo) < 0)
-		goto UART_OPEN_ERROR;
-
-    serinfo.flags &= ~ASYNC_SPD_MASK;
-    serinfo.flags |= ASYNC_SPD_CUST | ASYNC_LOW_LATENCY;
-    serinfo.custom_divisor = serinfo.baud_base / baudrate;
-	
-    if(ioctl(m_Socket_fd, TIOCSSERIAL, &serinfo) < 0)
-	{
-		if(DEBUG_PRINT == true)
-			printf("failed!\n");
-		goto UART_OPEN_ERROR;
-	}
 	if(DEBUG_PRINT == true)
 		printf("success!\n");
 
