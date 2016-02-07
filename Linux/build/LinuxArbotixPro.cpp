@@ -49,46 +49,88 @@ bool LinuxArbotixPro::OpenPort()
 	struct termios newtio;
 	struct serial_struct serinfo;
 	double baudrate = 1000000.0; //bps (1Mbps)
+	int iRet;
 
 	ClosePort();
 
 	if (DEBUG_PRINT == true)
-		printf("\n%s open ", m_PortName);
+		printf("\nTry override /dev/ttyDXL ", m_PortName);
 
-	if ((m_Socket_fd = open(m_PortName, O_RDWR | O_NOCTTY | O_NONBLOCK)) < 0)
-		goto UART_OPEN_ERROR;
+	if ((m_Socket_fd = open("/dev/ttyDXL", O_RDWR | O_NOCTTY | O_NONBLOCK)) >= 0)
+		SetPortName("/dev/ttyDXL");
+	else
+		{
+			if (DEBUG_PRINT == true)
+				printf("fail\n%s open ", m_PortName);
+
+			if ((m_Socket_fd = open(m_PortName, O_RDWR | O_NOCTTY | O_NONBLOCK)) < 0)
+				goto UART_OPEN_ERROR;
+		}
 
 	if (DEBUG_PRINT == true)
 		printf("success!\n");
 
-	// You must set 38400bps!
-	memset(&newtio, 0, sizeof(newtio));
-	newtio.c_cflag      = B38400 | CS8 | CLOCAL | CREAD;
-	newtio.c_iflag      = IGNPAR;
-	newtio.c_oflag      = 0;
-	newtio.c_lflag      = 0;
-	newtio.c_cc[VTIME]  = 0;
-	newtio.c_cc[VMIN]   = 0;
-	tcsetattr(m_Socket_fd, TCSANOW, &newtio);
+    // Test to see if we can find out which serial port we are actually talking to...
+    // if ttyUSBx then calls to tcdrain help.  On some other it hurts.
+    {
+        char szProcFD[20];
+        char szPath[80];
+        int ich;
+        sprintf(szProcFD, "/proc/self/fd/%d", m_Socket_fd);
+        ich = readlink(szProcFD, szPath, sizeof(szPath));
+            
+        // Hack look for /dev/ttyUSB... actuall only look at USB    
+        if ((ich > 0) && (szPath[8]=='U') && (szPath[9]=='S')&& (szPath[10]=='B'))    
+            m_UseTCDrain = 1;		// FTDI use drain...
+        else    
+            m_UseTCDrain = 0;		// Others ACM S2.. Don't appear to.
 
-	if (DEBUG_PRINT == true)
-		printf("Set %.1fbps ", baudrate);
+        if (DEBUG_PRINT == true)
+            printf("ReadLink(%d): %s Drain: %d\n", ich, szPath, m_UseTCDrain);
+    }    
+        
 
-	// Set non-standard baudrate
-	if (ioctl(m_Socket_fd, TIOCGSERIAL, &serinfo) < 0)
-		goto UART_OPEN_ERROR;
+    // First try with actual baud rate... 
+    // See if we can set directly
+    if (DEBUG_PRINT == true)
+        printf("Set baud rate directly\n");
+    memset(&newtio, 0, sizeof(newtio));
+    newtio.c_cflag      =  (baudrate < 1999999.0) ? (B1000000 | CS8 | CLOCAL | CREAD) : (B2000000 | CS8 | CLOCAL | CREAD) ;
+    newtio.c_iflag      = IGNPAR;
+    newtio.c_oflag      = 0;
+    newtio.c_lflag      = 0;
+    newtio.c_cc[VTIME]  = 0;
+    newtio.c_cc[VMIN]   = 0;
+    if (tcsetattr(m_Socket_fd, TCSANOW, &newtio) < 0)
+        {
+            // hard way...
+            // You must set 38400bps!
+            memset(&newtio, 0, sizeof(newtio));
+            newtio.c_cflag      = B1000000 | CS8 | CLOCAL | CREAD;
+            newtio.c_iflag      = IGNPAR;
+            newtio.c_oflag      = 0;
+            newtio.c_lflag      = 0;
+            newtio.c_cc[VTIME]  = 0;
+            newtio.c_cc[VMIN]   = 0;
+            tcsetattr(m_Socket_fd, TCSANOW, &newtio);
 
-	serinfo.flags &= ~ASYNC_SPD_MASK;
-	serinfo.flags |= ASYNC_SPD_CUST;
-	serinfo.custom_divisor = serinfo.baud_base / baudrate;
+            if (DEBUG_PRINT == true)
+                printf("Set %.1fbps ", baudrate);
 
-	if (ioctl(m_Socket_fd, TIOCSSERIAL, &serinfo) < 0)
-		{
+            // Set non-standard baudrate - FTDI Supports this some others do not...
+            ioctl(m_Socket_fd, TIOCGSERIAL, &serinfo);
+			serinfo.flags &= ~ASYNC_SPD_MASK;
+			serinfo.flags |= ASYNC_SPD_CUST;
+			serinfo.custom_divisor = serinfo.baud_base / baudrate;
+
+			iRet = ioctl(m_Socket_fd, TIOCSSERIAL, &serinfo);
 			if (DEBUG_PRINT == true)
-				printf("failed!\n");
-			goto UART_OPEN_ERROR;
-		}
+				printf("TIOCSSERIAL return %d\n", iRet);
 
+            if (iRet < 0)
+				goto UART_OPEN_ERROR;
+		}
+	
 	if (DEBUG_PRINT == true)
 		printf("success!\n");
 
@@ -146,7 +188,7 @@ void LinuxArbotixPro::ClosePort()
 
 void LinuxArbotixPro::FlushPort()
 {
-	if (m_Socket_fd != -1)
+	if ((m_Socket_fd != -1) && m_UseTCDrain)
 		tcdrain(m_Socket_fd);
 }
 

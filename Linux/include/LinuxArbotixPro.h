@@ -24,6 +24,7 @@ namespace Robot
 			double m_UpdateWaitTime;
 			double m_ByteTransferTime;
 			char m_PortName[20];
+            int m_UseTCDrain;
 
 			sem_t m_LowSemID;
 			sem_t m_MidSemID;
