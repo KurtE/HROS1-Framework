@@ -106,7 +106,7 @@ bool LinuxArbotixPro::OpenPort()
             // hard way...
             // You must set 38400bps!
             memset(&newtio, 0, sizeof(newtio));
-            newtio.c_cflag      = B1000000 | CS8 | CLOCAL | CREAD;
+            newtio.c_cflag      = B38400 | CS8 | CLOCAL | CREAD;
             newtio.c_iflag      = IGNPAR;
             newtio.c_oflag      = 0;
             newtio.c_lflag      = 0;
